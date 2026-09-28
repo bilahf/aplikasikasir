@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: kasir-app-dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+      - ./php.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - kasir-network
+    depends_on:
+      - database
+
+  nginx:
+    image: nginx:alpine
+    container_name: kasir-nginx-dev
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./src:/var/www/html
+      - ./nginx.dev.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - kasir-network
+    depends_on:
+      - app
+
+  database:
+    image: mysql:8.0
+    container_name: kasir-database
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    env_file:
+      - .env.docker
+    networks:
+      - kasir-network
+    volumes:
+      - dbdata:/var/lib/mysql
+
+networks:
+  kasir-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
